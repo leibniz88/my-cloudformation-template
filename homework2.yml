@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >  
+  Use the SSM Parameter store to store the 
+  instance type(t3.small)in the SSM Parameter Store as /myEC2Instance/type.
+Parameters: 
+  InstanceTypeParameter:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /myEC2Instance/type
+Mappings: 
+  RegionMap: 
+   #Amazon Linux 2:
+    us-east-1:
+      HVM64: ami-0715c1897453cabd1
+    us-west-2:
+      HVM64: ami-0ab193018f3e9351b
+  #Ubuntu 20.04 LTS:
+    us-east-1:
+      HVM64: ami-053b0d53c279acc90
+    us-west-2:
+      HVM64: ami-03f65b8614a860c29
+Resources: 
+  myEC2Instance: 
+    Type: "AWS::EC2::Instance"
+    Properties: 
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: "selmakp"
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+      - Key: Name
+        Value: awesome_vpc
+    
